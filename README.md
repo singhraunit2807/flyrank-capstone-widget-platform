@@ -87,7 +87,7 @@ Authenticated endpoints include:
 pytest -q
 ```
 
-The test suite covers cross-origin submission, validation, rate limiting, honeypot protection, geo fallback, geo-total failure, and side-effect failure isolation.
+The suite covers widget CRUD, cross-origin CORS, valid submissions, validation and oversized payloads, rate limiting, honeypot protection, geo provider fallback, total geo outage, and side-effect failure isolation.
 
 ## Transparency
 
