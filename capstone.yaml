@@ -1,0 +1,19 @@
+name: Embeddable Widget & Lead-Capture Platform
+track: Backend AI Engineering
+week: 8
+type: capstone
+runtime: Python 3.11
+framework: FastAPI
+storage: SQLite (local default)
+public_submission: /api/public/widgets/{widget_id}/submissions
+embed_endpoint: /widget.js
+features:
+  - multi-tenant widget CRUD
+  - public cross-origin submissions
+  - validation and 4xx errors
+  - rate limiting and 429 responses
+  - honeypot spam protection
+  - geo provider fallback
+  - best-effort side effects
+  - owner dashboard APIs
+  - automated tests
