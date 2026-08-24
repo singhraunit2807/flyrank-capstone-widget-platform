@@ -5,9 +5,12 @@ os.environ["RATE_LIMIT_WINDOW_SECONDS"] = "60"
 os.environ["WEBHOOK_URL"] = "http://127.0.0.1:9/unavailable"
 
 from fastapi.testclient import TestClient
-
-from app.main import app, SessionLocal, Tenant, Widget, Base, engine, _rate_windows
 from sqlalchemy import select
+
+from app.main import Tenant, Widget, SessionLocal, app, seed_tenant, _rate_windows
+
+with SessionLocal() as db:
+    seed_tenant(db)
 
 client = TestClient(app)
 TOKEN = "demo-token-change-me"
@@ -20,7 +23,9 @@ def widget_id():
             from uuid import uuid4
             tenant = db.scalar(select(Tenant))
             widget = Widget(id=str(uuid4()), tenant_id=tenant.id, name="Test Widget", title="Contact", fields_json='["name","email","message"]')
-            db.add(widget); db.commit(); db.refresh(widget)
+            db.add(widget)
+            db.commit()
+            db.refresh(widget)
         return widget.id
 
 
@@ -38,11 +43,7 @@ def test_health_and_widget_crud():
 def test_cross_origin_submission_and_side_effect_failure_do_not_break_it():
     _rate_windows.clear()
     wid = widget_id()
-    response = client.post(
-        f"/api/public/widgets/{wid}/submissions",
-        headers={"Origin":"https://customer.example"},
-        json={"name":"Alice","email":"alice@example.com","message":"Hello","website":""},
-    )
+    response = client.post(f"/api/public/widgets/{wid}/submissions", headers={"Origin":"https://customer.example"}, json={"name":"Alice","email":"alice@example.com","message":"Hello","website":""})
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
     assert response.json()["side_effect_status"] == "webhook_failed"
@@ -57,6 +58,12 @@ def test_honeypot_rejected():
 def test_invalid_payload_rejected():
     _rate_windows.clear(); wid = widget_id()
     r = client.post(f"/api/public/widgets/{wid}/submissions", json={"name":"","email":"","message":"","website":""})
+    assert r.status_code == 422
+
+
+def test_oversized_payload_rejected():
+    _rate_windows.clear(); wid = widget_id()
+    r = client.post(f"/api/public/widgets/{wid}/submissions", json={"email":"x@example.com","message":"x" * 5001,"website":""})
     assert r.status_code == 422
 
 
